@@ -7,11 +7,16 @@ const tokens = (n) => {
 
 describe("Token", () => {
 	let token;
+	let deployer;
+	let accounts;
 
 	beforeEach(async () => {
 		//Fetch Token from blockchain
 		const Token = await ethers.getContractFactory("Token");
 		token = await Token.deploy("JayBird Token", "JBT", 1000000);
+		//get the accouts
+		accounts = await ethers.getSigners();
+		deployer = accounts[0];
 	});
 
 	describe("Deployment", async () => {
@@ -38,6 +43,11 @@ describe("Token", () => {
 		it("Has a correct totalSupply", async () => {
 			//Check that the totalSupply is correct
 			expect(await token.totalSupply()).to.be.eq(totalSupply);
+		});
+
+		it("assigns total supply to deployer", async () => {
+			//Check that the balanceOf is assigned totalSupply
+			expect(await token.balanceOf(deployer.address)).to.be.eq(totalSupply);
 		});
 	});
 });
