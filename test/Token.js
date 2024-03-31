@@ -10,6 +10,7 @@ describe("Token", () => {
 	let deployer;
 	let accounts;
 	let receiver;
+	let exchange;
 
 	beforeEach(async () => {
 		//Fetch Token from blockchain
@@ -19,6 +20,7 @@ describe("Token", () => {
 		accounts = await ethers.getSigners();
 		deployer = accounts[0];
 		receiver = accounts[1];
+		exchange = accounts[2];
 	});
 
 	describe("Deployment", async () => {
@@ -93,5 +95,27 @@ describe("Token", () => {
 				await expect(token.connect(deployer).transfer("0x0000000000000000000000000000000000000000", amount)).to.be.reverted;
 			});
 		});
+	});
+	describe("Approving Tokens", () => {
+		let amount, transaction, result;
+
+		beforeEach(async () => {
+			//transfer tokens to receiver
+			amount = tokens(100);
+			transaction = await token.connect(deployer).approve(receiver.address, amount);
+			result = await transaction.wait();
+		});
+
+		describe("success", () => {
+			it("allocates an allowance for delegated token spending", async () => {
+				const amount = tokens(100);
+				const transaction = await token.connect(deployer).approve(exchange.address, amount);
+				const result = await transaction.wait();
+
+				expect(await token.allowance(deployer.address, receiver.address)).to.be.eq(amount);
+			});
+		});
+
+		describe("failure", () => {});
 	});
 });
