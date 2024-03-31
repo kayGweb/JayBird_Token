@@ -129,4 +129,48 @@ describe("Token", () => {
 			});
 		});
 	});
+
+	describe("Delegated Token Transfers", () => {
+		let transaction, amount, result;
+
+		beforeEach(async () => {
+			amount = tokens(100);
+			transaction = await token.connect(deployer).approve(exchange.address, amount);
+			result = await transaction.wait();
+		});
+
+		describe("Success", () => {
+			beforeEach(async () => {
+				amount = tokens(100);
+				transaction = await token.connect(exchange).transferFrom(deployer.address, receiver.address, amount);
+				result = await transaction.wait();
+			});
+
+			it("transfer tokens balances", async () => {
+				expect(await token.balanceOf(deployer.address)).to.be.eq(tokens(999900));
+				expect(await token.balanceOf(receiver.address)).to.be.eq(amount);
+			});
+
+			it("reset the allowance", async () => {
+				expect(await token.allowance(deployer.address, exchange.address)).to.be.eq(0);
+			});
+
+			it("emits Transfer event", async () => {
+				const event = result.events[0];
+				expect(event.event).to.be.eq("Transfer");
+
+				const args = event.args;
+				expect(args.from).to.be.eq(deployer.address);
+				expect(args.to).to.be.eq(receiver.address);
+				expect(args.value).to.be.eq(amount);
+			});
+		});
+
+		describe("Failure", () => {
+			it("rejects insufficient balances", async () => {
+				const invalidAmount = tokens(100000000);
+				await expect(token.connect(exchange).transferFrom(deployer.address, receiver.address, invalidAmount)).to.be.reverted;
+			});
+		});
+	});
 });

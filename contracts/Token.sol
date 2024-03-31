@@ -55,14 +55,13 @@ contract Token {
         address _to,
         uint256 _value
     ) public returns (bool success) {
+        //Balance is enough for successful transfer
         require(_value <= balanceOf[_from]);
         require(_value <= allowance[_from][msg.sender]);
-        require(_to != address(0));
-
-        balanceOf[_from] -= _value;
-        balanceOf[_to] += _value;
+        //Reset the allowance
         allowance[_from][msg.sender] -= _value;
-        emit Transfer(_from, _to, _value);
+        //Transfer the amount
+        _transfer(_from, _to, _value);
         return true;
     }
 
