@@ -96,26 +96,37 @@ describe("Token", () => {
 			});
 		});
 	});
+
 	describe("Approving Tokens", () => {
 		let amount, transaction, result;
 
 		beforeEach(async () => {
 			//transfer tokens to receiver
 			amount = tokens(100);
-			transaction = await token.connect(deployer).approve(receiver.address, amount);
+			transaction = await token.connect(deployer).approve(exchange.address, amount);
 			result = await transaction.wait();
 		});
 
 		describe("success", () => {
 			it("allocates an allowance for delegated token spending", async () => {
-				const amount = tokens(100);
-				const transaction = await token.connect(deployer).approve(exchange.address, amount);
-				const result = await transaction.wait();
+				expect(await token.allowance(deployer.address, exchange.address)).to.be.eq(amount);
+			});
 
-				expect(await token.allowance(deployer.address, receiver.address)).to.be.eq(amount);
+			it("emits Approval event", async () => {
+				const event = result.events[0];
+				expect(event.event).to.be.eq("Approval");
+
+				const args = event.args;
+				expect(args.owner).to.be.eq(deployer.address);
+				expect(args.spender).to.be.eq(exchange.address);
+				expect(args.value).to.be.eq(amount);
 			});
 		});
 
-		describe("failure", () => {});
+		describe("failure", () => {
+			it("rejects invalid spenders", async () => {
+				await expect(token.connect(deployer).approve("0x0000000000000000000000000000000000000000", amount)).to.be.reverted;
+			});
+		});
 	});
 });
